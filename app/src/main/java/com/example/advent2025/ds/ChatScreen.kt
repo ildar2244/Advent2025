@@ -2,33 +2,12 @@ package com.example.advent2025.ds
 
 import ChatMessage
 import ChatViewModel
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
@@ -42,6 +21,8 @@ import kotlinx.coroutines.delay
 @Composable
 fun ChatScreenDS(viewModel: ChatViewModel = viewModel()) {
     val state = viewModel.chatState
+    val formatExpanded = remember { mutableStateOf(false) }
+    val formats = OutputFormat.values().toList()
 
     Column(
         modifier = Modifier
@@ -49,51 +30,39 @@ fun ChatScreenDS(viewModel: ChatViewModel = viewModel()) {
             .systemBarsPadding()
             .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
-        // Выбор API
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ApiType.values().forEach { apiType ->
-                FilterChip(
-                    selected = state.selectedApi == apiType,
-                    onClick = { viewModel.selectApi(apiType) },
-                    label = { Text(apiType.name) }
-                )
-            }
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Выбор модели
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(vertical = 8.dp)
+        // Верхняя панель выбора
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            items(
-                count = state.availableModels
-                    .filter { model ->
-                        when (state.selectedApi) {
-                            ApiType.DEEP_SEEK -> model.contains("deepseek")
-                            ApiType.OPEN_AI -> model.contains("gpt")
-                            ApiType.OPEN_ROUTER -> model.contains("router")
-                        }
-                    }.size,
-                key = { index -> state.availableModels[index] }, // Уникальный ключ
-                itemContent = { index ->
-                    val model = state.availableModels
-                        .filter {
-                            when (state.selectedApi) {
-                                ApiType.DEEP_SEEK -> it.contains("deepseek")
-                                ApiType.OPEN_AI -> it.contains("gpt")
-                                ApiType.OPEN_ROUTER -> it.contains("router")
-                            }
-                        }[index]
-
-                    FilterChip(
-                        selected = state.selectedModel == model,
-                        onClick = { viewModel.selectModel(model) },
-                        label = { Text(model) }
-                    )
-                }
+            // Выбор модели
+            ApiTypeDropdown(
+                selectedApi = state.selectedApi,
+                onApiSelected = { apiType -> viewModel.selectApi(apiType) }
             )
+
+            // Выбор формата ответа
+            Box {
+                TextButton(onClick = { formatExpanded.value = true }) {
+                    Text(text = state.selectedOutputFormat.name)
+                }
+                DropdownMenu(
+                    expanded = formatExpanded.value,
+                    onDismissRequest = { formatExpanded.value = false }
+                ) {
+                    formats.forEach { format ->
+                        DropdownMenuItem(
+                            text = { Text(format.name) },
+                            onClick = {
+                                viewModel.selectOutputFormat(format)
+                                formatExpanded.value = false
+                            }
+                        )
+                    }
+                }
+            }
         }
 
         val listState = rememberLazyListState()
@@ -120,7 +89,9 @@ fun ChatScreenDS(viewModel: ChatViewModel = viewModel()) {
             ) {
                 items(
                     items = state.messages,
-                    key = { message -> message.hashCode() },
+                    key = { message ->
+                        "${message.timestamp}-${message.content.hashCode()}"
+                    },
                     contentType = { "message" }
                 ) { message ->
                     MessageItem(message = message)
@@ -173,7 +144,38 @@ fun ChatScreenDSPreview() {
 }
 
 @Composable
-private fun MessageItem(message: ChatMessage) {
+fun ApiTypeDropdown(
+    selectedApi: ApiType,
+    onApiSelected: (ApiType) -> Unit
+) {
+    val expanded = remember { mutableStateOf(false) }
+
+    Box {
+        TextButton(onClick = { expanded.value = true }) {
+            Text(text = selectedApi.name)
+        }
+        DropdownMenu(
+            expanded = expanded.value,
+            onDismissRequest = { expanded.value = false }
+        ) {
+            ApiType.values().forEach { api ->
+                DropdownMenuItem(
+                    text = { Text(api.name) },
+                    onClick = {
+                        onApiSelected(api)
+                        expanded.value = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+fun MessageItem(message: ChatMessage) {
+    var selectedFormat by remember { mutableStateOf(message.format) }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -185,10 +187,65 @@ private fun MessageItem(message: ChatMessage) {
             }
         )
     ) {
-        Text(
-            text = "${message.role.uppercase()}: ${message.content}",
-            modifier = Modifier.padding(16.dp),
-            style = MaterialTheme.typography.bodyLarge
-        )
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Заголовок с переключателем
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = message.role.uppercase(),
+                    style = MaterialTheme.typography.titleSmall
+                )
+
+                /*if (message.role != "user") {
+                    // Выпадающий список выбора формата
+                    DropdownMenuFormatSelector(
+                        selectedFormat = selectedFormat,
+                        onFormatSelected = { selectedFormat = it },
+                        availableFormats = message.parsedFormats.keys.ifEmpty { listOf(message.format) }
+                    )
+                }*/
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Текст в выбранном формате
+            val displayText = message.parsedFormats[selectedFormat] ?: message.content
+            Text(
+                text = displayText,
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
+    }
+}
+
+@Composable
+fun DropdownMenuFormatSelector(
+    selectedFormat: String,
+    onFormatSelected: (String) -> Unit,
+    availableFormats: Collection<String>
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box {
+        TextButton(onClick = { expanded = true }) {
+            Text(selectedFormat.uppercase())
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            availableFormats.forEach { format ->
+                DropdownMenuItem(
+                    text = { Text(format.uppercase()) },
+                    onClick = {
+                        onFormatSelected(format)
+                        expanded = false
+                    }
+                )
+            }
+        }
     }
 }

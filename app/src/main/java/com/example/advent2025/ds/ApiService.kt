@@ -36,3 +36,11 @@ interface OpenRouterApi : AiApi {
         @Body request: ChatRequest
     ): ChatResponse
 }
+
+interface YandexApi : AiApi {
+    @POST("foundationModels/v1/completion")
+    override suspend fun sendMessage(
+        @Header("Authorization") apiKey: String,
+        @Body request: ChatRequest
+    ): ChatResponse
+}

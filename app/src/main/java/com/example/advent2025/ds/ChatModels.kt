@@ -1,12 +1,18 @@
+import com.google.gson.annotations.SerializedName
 
 data class ChatRequest(
     val model: String,
-    val messages: List<ChatMessage>
+    val messages: List<ChatMessage>,
+    val response_format: Map<String, String>? = null,
+    val modelUri: String? = null,
 )
 
 data class ChatMessage(
     val role: String,  // "user", "assistant"
-    val content: String
+    val content: String, // Исходный ответ LLM (в одном формате)
+    val format: String = "text", // json, xml, markdown, text
+    val parsedFormats: Map<String, String> = emptyMap(), // разные представления
+    val timestamp: Long = System.currentTimeMillis(),
 )
 
 data class ChatResponse(

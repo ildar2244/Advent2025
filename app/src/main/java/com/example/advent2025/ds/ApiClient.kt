@@ -1,6 +1,7 @@
 import com.example.advent2025.ds.DeepSeekApi
 import com.example.advent2025.ds.OpenAIApi
 import com.example.advent2025.ds.OpenRouterApi
+import com.example.advent2025.ds.YandexApi
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -45,4 +46,12 @@ object ApiClient {
         .addConverterFactory(GsonConverterFactory.create())
         .build()
         .create(OpenRouterApi::class.java)
+
+    fun createYandexApi(): YandexApi = Retrofit.Builder()
+        .baseUrl("https://llm.api.cloud.yandex.net/")
+        .client(okHttpClient)
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+        .create(YandexApi::class.java)
+
 }

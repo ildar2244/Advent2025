@@ -38,6 +38,11 @@ android {
             "OPENROUTER_API_KEY",
             "\"${localProps.getProperty("OPENROUTER_API_KEY")}\""
         )
+        buildConfigField(
+            "String",
+            "YANDEX_API_KEY",
+            "\"${localProps.getProperty("YANDEX_API_KEY")}\""
+        )
     }
 
     buildTypes {

@@ -7,11 +7,15 @@ import androidx.lifecycle.viewModelScope
 import com.example.advent2025.ds.ApiType
 import com.example.advent2025.ds.ChatRepository
 import com.example.advent2025.ds.ChatState
+import com.example.advent2025.ds.OutputFormat
 import kotlinx.coroutines.launch
 
 class ChatViewModel : ViewModel() {
     private val repository = ChatRepository()
     var chatState by mutableStateOf(ChatState())
+        private set
+
+    var selectedFormat by mutableStateOf<OutputFormat?>(null)
         private set
 
     // Обновление текста сообщения
@@ -26,19 +30,34 @@ class ChatViewModel : ViewModel() {
             selectedModel = when (apiType) {
                 ApiType.DEEP_SEEK -> "deepseek-chat"
                 ApiType.OPEN_AI -> "gpt-3.5-turbo"
-                ApiType.OPEN_ROUTER -> "deepseek/deepseek-r1"
+                ApiType.OPEN_ROUTER -> "deepseek/deepseek-r1-distill-llama-70b:free"
+                ApiType.YAGPT -> "gpt://b1gat8l26jjgup3v8jif/yandexgpt-lite"
             }
         )
     }
 
-    // Выбор модели
-    fun selectModel(model: String) {
-        chatState = chatState.copy(selectedModel = model)
+    // Выбор формата
+    fun selectOutputFormat(format: OutputFormat) {
+        chatState = chatState.copy(selectedOutputFormat = format)
+    }
+
+    // Установка примера формата (опционально)
+    fun updateExampleFormat(example: String) {
+        chatState = chatState.copy(exampleFormat = example)
     }
 
     // Отправка сообщения
     fun sendMessage() {
         if (chatState.userMessage.isBlank()) return
+
+        val formatInstruction = when (selectedFormat) {
+            OutputFormat.JSON -> "Верни ответ строго в формате JSON."
+            OutputFormat.CSV -> "Верни ответ строго в формате CSV."
+            OutputFormat.MARKDOWN -> "Верни ответ строго в формате Markdown."
+            OutputFormat.TEXT, null -> "Ответ можно вернуть обычным текстом."
+        }
+
+        val promptWithFormat = "${chatState.userMessage.trim()}\n\n$formatInstruction"
 
         viewModelScope.launch {
             chatState = chatState.copy(
@@ -49,16 +68,20 @@ class ChatViewModel : ViewModel() {
             val result = repository.sendMessage(
                 apiType = chatState.selectedApi,
                 model = chatState.selectedModel,
-                message = chatState.userMessage
+                userMessage = promptWithFormat,
+                outputFormat = chatState.selectedOutputFormat,
+                exampleFormat = chatState.exampleFormat
             )
 
             chatState = when {
                 result.isSuccess -> {
-                    val responseMessage = result.getOrNull()?.choices?.firstOrNull()?.message
+                    val llmResult = result.getOrNull()
+                    val content = llmResult?.rawContent ?: "Пустой ответ"
+
                     chatState.copy(
                         messages = chatState.messages + listOf(
                             ChatMessage("user", chatState.userMessage),
-                            responseMessage ?: ChatMessage("assistant", "Пустой ответ")
+                            ChatMessage("assistant", content)
                         ),
                         userMessage = "",
                         isLoading = false
