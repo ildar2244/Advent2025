@@ -5,6 +5,7 @@ data class ChatRequest(
     val messages: List<ChatMessage>,
     val response_format: Map<String, String>? = null,
     val modelUri: String? = null,
+    val max_tokens: Int = 500,  // Ограничение длины ответа
 )
 
 data class ChatMessage(
@@ -13,6 +14,7 @@ data class ChatMessage(
     val format: String = "text", // json, xml, markdown, text
     val parsedFormats: Map<String, String> = emptyMap(), // разные представления
     val timestamp: Long = System.currentTimeMillis(),
+    val reasoning: String = "",
 )
 
 data class ChatResponse(

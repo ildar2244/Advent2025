@@ -2,6 +2,7 @@ package com.example.advent2025.ds
 
 import ChatMessage
 import ChatViewModel
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.text.KeyboardActions
@@ -10,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -23,6 +25,7 @@ fun ChatScreenDS(viewModel: ChatViewModel = viewModel()) {
     val state = viewModel.chatState
     val formatExpanded = remember { mutableStateOf(false) }
     val formats = OutputFormat.values().toList()
+    var isWorkoutMode by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -44,7 +47,7 @@ fun ChatScreenDS(viewModel: ChatViewModel = viewModel()) {
             )
 
             // Выбор формата ответа
-            Box {
+            /*Box {
                 TextButton(onClick = { formatExpanded.value = true }) {
                     Text(text = state.selectedOutputFormat.name)
                 }
@@ -62,6 +65,28 @@ fun ChatScreenDS(viewModel: ChatViewModel = viewModel()) {
                         )
                     }
                 }
+            }*/
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Button(
+                onClick = { isWorkoutMode = false },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (!isWorkoutMode) Color(0xFF5C865C) else Color.Gray
+                )
+            ) {
+                Text("💬 Чат")
+            }
+            Button(
+                onClick = { isWorkoutMode = true },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isWorkoutMode) Color(0xFF5C865C) else Color.Gray
+                )
+            ) {
+                Text("🏋️ План тренировок")
             }
         }
 
@@ -120,13 +145,17 @@ fun ChatScreenDS(viewModel: ChatViewModel = viewModel()) {
             label = { Text("Ваше сообщение") },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
             keyboardActions = KeyboardActions(
-                onSend = { viewModel.sendMessage() }
+                onSend = {
+                    viewModel.sendMessageWithSystem()
+                }
             )
         )
 
         // Кнопка отправки
         Button(
-            onClick = viewModel::sendMessage,
+            onClick = {
+                viewModel.sendMessageWithSystem()
+            },
             modifier = Modifier.align(Alignment.End),
             enabled = !state.isLoading
         ) {
@@ -212,7 +241,8 @@ fun MessageItem(message: ChatMessage) {
             Spacer(modifier = Modifier.height(8.dp))
 
             // Текст в выбранном формате
-            val displayText = message.parsedFormats[selectedFormat] ?: message.content
+//            val displayText = message.parsedFormats[selectedFormat] ?: message.content
+            val displayText = message.content.substringBefore("[КОНЕЦ]")
             Text(
                 text = displayText,
                 style = MaterialTheme.typography.bodyLarge

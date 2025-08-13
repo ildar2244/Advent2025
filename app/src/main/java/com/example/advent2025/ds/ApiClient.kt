@@ -1,5 +1,4 @@
-import com.example.advent2025.ds.DeepSeekApi
-import com.example.advent2025.ds.OpenAIApi
+
 import com.example.advent2025.ds.OpenRouterApi
 import com.example.advent2025.ds.YandexApi
 import okhttp3.Interceptor
@@ -25,20 +24,6 @@ object ApiClient {
         .addInterceptor(authInterceptor)
         .addInterceptor(loggingInterceptor)
         .build()
-
-    fun createDeepSeekApi(): DeepSeekApi = Retrofit.Builder()
-        .baseUrl("https://api.deepseek.com/v1/")
-        .client(okHttpClient)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
-        .create(DeepSeekApi::class.java)
-
-    fun createOpenAIApi(): OpenAIApi = Retrofit.Builder()
-        .baseUrl("https://api.openai.com/v1/")
-        .client(okHttpClient)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
-        .create(OpenAIApi::class.java)
 
     fun createOpenRouterApi(): OpenRouterApi = Retrofit.Builder()
         .baseUrl("https://openrouter.ai/api/v1/")

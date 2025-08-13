@@ -13,22 +13,6 @@ interface AiApi {
     ): ChatResponse
 }
 
-interface DeepSeekApi : AiApi {
-    @POST("chat/completions")
-    override suspend fun sendMessage(
-        @Header("Authorization") apiKey: String,
-        @Body request: ChatRequest
-    ): ChatResponse
-}
-
-interface OpenAIApi : AiApi {
-    @POST("chat/completions")
-    override suspend fun sendMessage(
-        @Header("Authorization") apiKey: String,
-        @Body request: ChatRequest
-    ): ChatResponse
-}
-
 interface OpenRouterApi : AiApi {
     @POST("chat/completions")
     override suspend fun sendMessage(

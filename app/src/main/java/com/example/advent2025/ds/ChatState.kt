@@ -9,10 +9,13 @@ data class ChatState(
     val error: String? = null,
 
     // Выбор API
-    val selectedApi: ApiType = ApiType.OPEN_AI,
+    val selectedApi: ApiType = ApiType.OPEN_ROUTER,
     val selectedModel: String = "deepseek/deepseek-r1",
 
     // Выбор формата ответа
     val selectedOutputFormat: OutputFormat = OutputFormat.TEXT,
     val exampleFormat: String? = null,
+
+    val temperature: Double = 0.7,
+    val stop: List<String> = listOf("[КОНЕЦ]")  // Стоп-слово
 )

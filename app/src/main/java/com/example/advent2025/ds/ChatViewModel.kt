@@ -28,9 +28,8 @@ class ChatViewModel : ViewModel() {
         chatState = chatState.copy(
             selectedApi = apiType,
             selectedModel = when (apiType) {
-                ApiType.DEEP_SEEK -> "deepseek-chat"
-                ApiType.OPEN_AI -> "gpt-3.5-turbo"
-                ApiType.OPEN_ROUTER -> "deepseek/deepseek-r1-distill-llama-70b:free"
+//                ApiType.OPEN_ROUTER -> "deepseek/deepseek-r1-0528:free"
+                ApiType.OPEN_ROUTER -> "deepseek/deepseek-r1t2-chimera:free"
                 ApiType.YAGPT -> "gpt://b1gat8l26jjgup3v8jif/yandexgpt-lite"
             }
         )
@@ -46,8 +45,19 @@ class ChatViewModel : ViewModel() {
         chatState = chatState.copy(exampleFormat = example)
     }
 
+    fun sendMessage(
+        modeWorkout: Boolean = false,
+        modeFormat: Boolean = false,
+    ) {
+        when {
+            modeFormat == true -> sendMessageFormat()
+            modeWorkout == true -> sendMessageWithSystem()
+            else -> sendMessageChat()
+        }
+    }
+
     // Отправка сообщения
-    fun sendMessage() {
+    fun sendMessageFormat() {
         if (chatState.userMessage.isBlank()) return
 
         val formatInstruction = when (selectedFormat) {
@@ -65,7 +75,7 @@ class ChatViewModel : ViewModel() {
                 error = null
             )
 
-            val result = repository.sendMessage(
+            val result = repository.sendMessageFormat(
                 apiType = chatState.selectedApi,
                 model = chatState.selectedModel,
                 userMessage = promptWithFormat,
@@ -82,6 +92,76 @@ class ChatViewModel : ViewModel() {
                         messages = chatState.messages + listOf(
                             ChatMessage("user", chatState.userMessage),
                             ChatMessage("assistant", content)
+                        ),
+                        userMessage = "",
+                        isLoading = false
+                    )
+                }
+                else -> chatState.copy(
+                    error = result.exceptionOrNull()?.message ?: "Неизвестная ошибка",
+                    isLoading = false
+                )
+            }
+        }
+    }
+
+    fun sendMessageWithSystem() {
+        if (chatState.userMessage.isBlank()) return
+
+        viewModelScope.launch {
+            chatState = chatState.copy(
+                isLoading = true,
+                error = null
+            )
+
+            val result = repository.sendMessageWithSystem(
+                apiType = chatState.selectedApi,
+                model = chatState.selectedModel,
+                message = chatState.userMessage
+            )
+
+            chatState = when {
+                result.isSuccess -> {
+                    val responseMessage = result.getOrNull()?.choices?.firstOrNull()?.message
+                    chatState.copy(
+                        messages = chatState.messages + listOf(
+                            ChatMessage("user", chatState.userMessage),
+                            responseMessage ?: ChatMessage("assistant", "Пустой ответ")
+                        ),
+                        userMessage = "",
+                        isLoading = false
+                    )
+                }
+                else -> chatState.copy(
+                    error = result.exceptionOrNull()?.message ?: "Неизвестная ошибка",
+                    isLoading = false
+                )
+            }
+        }
+    }
+
+    fun sendMessageChat() {
+        if (chatState.userMessage.isBlank()) return
+
+        viewModelScope.launch {
+            chatState = chatState.copy(
+                isLoading = true,
+                error = null
+            )
+
+            val result = repository.sendMessageChat(
+                apiType = chatState.selectedApi,
+                model = chatState.selectedModel,
+                message = chatState.userMessage
+            )
+
+            chatState = when {
+                result.isSuccess -> {
+                    val responseMessage = result.getOrNull()?.choices?.firstOrNull()?.message
+                    chatState.copy(
+                        messages = chatState.messages + listOf(
+                            ChatMessage("user", chatState.userMessage),
+                            responseMessage ?: ChatMessage("assistant", "Пустой ответ")
                         ),
                         userMessage = "",
                         isLoading = false
