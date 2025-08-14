@@ -1,6 +1,6 @@
 package com.example.advent2025.ds
 
-import ApiClient
+import com.example.advent2025.network.ApiClient
 import ChatMessage
 import ChatRequest
 import ChatResponse
@@ -28,7 +28,8 @@ const val SYSTEM_PROMPT = """
 
 class ChatRepository {
     private val openRouterApi = ApiClient.createOpenRouterApi()
-    private val yandexApi = ApiClient.createYandexApi()
+//    private val yandexApi = ApiClient.createYandexApi()
+    private val yandexApi = ApiClient.createOpenRouterApi()
 
     suspend fun sendMessageChat(
         apiType: ApiType,

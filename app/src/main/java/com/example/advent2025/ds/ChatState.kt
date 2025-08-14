@@ -9,7 +9,7 @@ data class ChatState(
     val error: String? = null,
 
     // Выбор API
-    val selectedApi: ApiType = ApiType.OPEN_ROUTER,
+    val selectedApi: ApiType = ApiType.YAGPT,
     val selectedModel: String = "deepseek/deepseek-r1",
 
     // Выбор формата ответа

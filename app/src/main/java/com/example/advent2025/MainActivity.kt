@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.advent2025.ds.ChatScreenDS
+import com.example.advent2025.ui.chatllm.ChatLlmScreen
 import com.example.advent2025.ui.theme.Advent2025Theme
 
 class MainActivity : ComponentActivity() {
@@ -17,7 +18,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             Advent2025Theme {
-                ChatScreenDS()
+//                ChatScreenDS()
+                ChatLlmScreen()
             }
         }
     }
